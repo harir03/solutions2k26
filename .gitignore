@@ -1,69 +1,52 @@
+```
 # Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
+backend/requirements.txt
 
-# Editors
-.vscode/
-.idea/
+# Models (if they are large/generated)
+backend/backend/models/*.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Environment
 .env
-.env.local
-*.env.*
+.venv/
+venv/
+ENV/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
+# IDE
+.vscode/
+.idea/
 
-# System
+# OS
 .DS_Store
 Thumbs.db
 
-# Compiled files
-*.pyc
-*.class
-*.o
-*.exe
-*.dll
-*.so
-*.a
-*.obj
-*.out
+# Logs
+*.log
 
 # Coverage
-coverage/
-htmlcov/
 .coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+htmlcov/
+.coverage.*
+.coverage.xml
+```

@@ -1,0 +1,427 @@
+FairHire — FINAL Architecture
+"Inspect, Measure, Flag, Fix" — Aligned to Problem Statement
+Problem Statement (Verbatim)
+Computer programs now make life-changing decisions about who gets a job, a bank loan, or even medical care. However, if these programs learn from flawed or unfair historical data, they will repeat and amplify those exact same discriminatory mistakes.
+
+Objective: Build a clear, accessible solution to thoroughly inspect data sets and software models for hidden unfairness or discrimination. Provide organizations with an easy way to measure, flag, and fix harmful bias before their systems impact real people.
+
+How Our Architecture Maps to Every Word
+PS Requirement	Our Capability	How
+"inspect data sets"	Mode 1: Dataset Inspector	Upload CSV → find demographic gaps, biased labels, proxy features
+"inspect software models"	Mode 2: Model Auditor	Plug in ANY model → probe with synthetic data → catch unfair patterns
+"measure bias"	Fairness Metrics Engine	6 statistical metrics with formulas, thresholds, and pass/fail
+"flag bias"	Severity System	Red/Yellow/Green flags with specific evidence for each finding
+"fix harmful bias"	Mode 3: Fix & Prove	Sequential encoding + proxy removal → before/after proof
+"easy way"	No-Code Web UI	Upload CSV, click buttons, read visual dashboard. No Python needed
+"before systems impact real people"	Quarantine Gate	Biased results are HELD — never released without human review
+Architecture Overview
+┌──────────────────────────────────────────────────────────────────┐
+│                        FairHire Platform                         │
+│                                                                  │
+│   ┌────────────────────────────────────────────────────────┐    │
+│   │              WEB UI (React + Vite)                      │    │
+│   │   Upload │ Dashboard │ Audit View │ Fix View │ Report  │    │
+│   └────────────────────────┬───────────────────────────────┘    │
+│                            │ REST API                            │
+│   ┌────────────────────────┴───────────────────────────────┐    │
+│   │              BACKEND (Python + FastAPI)                  │    │
+│   │                                                          │    │
+│   │   ┌──────────┐   ┌──────────┐   ┌──────────┐           │    │
+│   │   │  MODE 1  │   │  MODE 2  │   │  MODE 3  │           │    │
+│   │   │ INSPECT  │   │  AUDIT   │   │   FIX    │           │    │
+│   │   │ Dataset  │   │  Model   │   │ & Prove  │           │    │
+│   │   └────┬─────┘   └────┬─────┘   └────┬─────┘           │    │
+│   │        │              │              │                   │    │
+│   │   ┌────┴──────────────┴──────────────┴─────┐            │    │
+│   │   │         SHARED ENGINES                  │            │    │
+│   │   │  ┌─────────────┐  ┌──────────────┐     │            │    │
+│   │   │  │  Fairness   │  │  Sequential  │     │            │    │
+│   │   │  │  Metrics    │  │  Encoder     │     │            │    │
+│   │   │  └─────────────┘  └──────────────┘     │            │    │
+│   │   │  ┌─────────────┐  ┌──────────────┐     │            │    │
+│   │   │  │  Proxy      │  │  NER Text    │     │            │    │
+│   │   │  │  Detector   │  │  Scrubber    │     │            │    │
+│   │   │  └─────────────┘  └──────────────┘     │            │    │
+│   │   └────────────────────────────────────────┘            │    │
+│   │                                                          │    │
+│   │   ┌────────────────────────────────────────┐            │    │
+│   │   │  LOCAL AI: Gemma 2 2B via Ollama       │            │    │
+│   │   │  localhost:11434 (free, offline, fast)  │            │    │
+│   │   └────────────────────────────────────────┘            │    │
+│   └──────────────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────┘
+Mode 1: INSPECT — "Find the Bias in Your Data"
+What it answers: "Is our hiring data fair, or has history baked discrimination into it?"
+
+Input
+User uploads a CSV with hiring data. Example columns:
+
+name, gender, age, college, city, skills, experience_years, hired
+Processing Pipeline
+CSV Upload
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  1. SCHEMA DETECTION                │
+│     Auto-detect which columns are:  │
+│     - Protected (name, gender, age) │
+│     - Features (skills, experience) │
+│     - Outcome (hired: yes/no)       │
+│     User can override if wrong      │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  2. REPRESENTATION ANALYSIS         │
+│     Count distribution per group:   │
+│     • Gender: 78% M / 22% F        │
+│     • Colleges: 60% Tier-1          │
+│     • Cities: 45% metros only       │
+│     Flag if any group < 20%         │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  3. LABEL BIAS DETECTION            │
+│     Hiring rate per group:          │
+│     • Male hired: 67%              │
+│     • Female hired: 38%            │
+│     • Gap: 29 points → SEVERE 🔴   │
+│     Statistical significance: p<.01│
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  4. PROXY FEATURE SCANNER           │
+│     Correlation of each feature     │
+│     with each protected attribute:  │
+│     • hobbies ↔ gender: r=0.87 🔴  │
+│     • college ↔ hired: r=0.72 ⚠️   │
+│     • skills ↔ gender: r=0.12 ✅   │
+│     Flag if r > 0.6                 │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  5. FREE-TEXT PII SCAN (if present) │
+│     spaCy NER scans text fields for │
+│     leaked names, locations, orgs   │
+│     "Worked under Prof. Rao at IISc"│
+│     → PERSON detected, ORG detected│
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  6. FAIRNESS SCORECARD              │
+│     Six metrics calculated:         │
+│     Overall Score: 42/100 🔴        │
+│     Verdict: "SIGNIFICANT BIAS      │
+│     DETECTED — 3 critical,          │
+│     2 warnings"                     │
+└─────────────────────────────────────┘
+Six Fairness Metrics
+#	Metric	Formula	Pass Threshold	What It Catches
+1	Demographic Parity Ratio	(selection rate of worst group) ÷ (selection rate of best group)	≥ 0.8	Unequal selection rates
+2	Disparate Impact	Same as DPR — legal name (US 4/5 rule)	≥ 0.8	Legal compliance check
+3	Equal Opportunity Difference	TPR(group A) − TPR(group B)	< 0.1	Among qualified people, are chances equal?
+4	Predictive Parity	Precision(A) − Precision(B)	< 0.1	Is the model equally accurate for all groups?
+5	Proxy Leak Score	Max correlation of any feature with any protected attribute	< 0.6	Hidden info leakage
+6	Representation Index	Min group % ÷ Expected group %	≥ 0.5	Dataset completeness
+Output
+Visual dashboard with 6 metric cards (Red/Yellow/Green)
+Specific evidence for each flag ("hobbies column correlates 0.87 with gender")
+Downloadable inspection report
+Mode 2: AUDIT — "Prove Your Model Is Biased" ⭐ HERO FEATURE
+What it answers: "Even if the data looks okay, is the MODEL making unfair decisions?"
+
+Two Sub-Modes
+2A: Built-in Scorer (Gemma 2 local) We provide a resume scorer powered by Gemma 2. User uploads resumes → we score them → we audit our own scorer for bias. Proves the concept.
+
+2B: External Model (Plug any API) User provides their company's model endpoint. We send synthetic resumes to THEIR system and measure bias in THEIR model. This is the enterprise value.
+
+The Differential Testing Engine
+STEP 1: Select a base resume profile from the dataset
+        (or auto-pick the median candidate)
+        Base: 5yr Python dev, React, 200 GitHub commits,
+              B.Tech CS, Bangalore
+STEP 2: Generate synthetic variants
+        Everything identical — only the name changes
+        ┌─────────────────────────────────────────┐
+        │  Base resume cloned 5 times:            │
+        │                                          │
+        │  Name: "Rahul Sharma"     (Hindu male)  │
+        │  Name: "Priya Patel"      (Hindu female)│
+        │  Name: "Mohammed Khan"    (Muslim male) │
+        │  Name: "Fatima Begum"     (Muslim female)│
+        │  Name: "John Smith"       (Western male)│
+        │                                          │
+        │  Everything else: IDENTICAL              │
+        └─────────────────────────────────────────┘
+STEP 3: Send all 5 to the model (Gemma or external API)
+STEP 4: Collect scores
+        ┌─────────────────────────────────────────┐
+        │  Results:                                │
+        │                                          │
+        │  Rahul Sharma     ████████████  87/100  │
+        │  John Smith       ███████████   84/100  │
+        │  Priya Patel      ████████      72/100  │
+        │  Fatima Begum     ███████       69/100  │
+        │  Mohammed Khan    ██████        65/100  │
+        │                                          │
+        │  ⚠️ BIAS DETECTED                       │
+        │  Gender gap:   15 pts (male favored)    │
+        │  Religion gap: 22 pts (Hindu favored)   │
+        │  Max gap:      22 pts → CRITICAL 🔴     │
+        └─────────────────────────────────────────┘
+STEP 5: Repeat with 50 different base profiles
+        Calculate statistical significance
+        p < 0.001 → bias is real, not random noise
+Why This Beats Existing Tools
+IBM AIF360:     "Give me your model's weights and training data"
+                → Company: "No, that's proprietary"
+                → Dead end
+Microsoft Fairlearn: "Import your model into my Python notebook"
+                     → HR Manager: "I don't know Python"
+                     → Dead end
+Google What-If:  "Manually change one feature and see what happens"
+                 → Slow, not automated, not statistical
+FairHire:        "Give me your API endpoint. I'll send test resumes.
+                  You don't share any code or data.
+                  I prove bias exists in 30 seconds."
+                 → Works on ANY system — even a human recruiter
+Mode 3: FIX — "Remove the Bias and Prove It Worked"
+What it answers: "Okay, bias exists. Now fix it and show me proof."
+
+Three Fix Strategies (Applied Independently or Together)
+Fix 1: Sequential Encoding (Our Innovation)
+
+Every sensitive value → unique sequential code
+Same value appearing twice → different codes
+Original:
+  Record 1: Name=Priya, College=IIT Bombay
+  Record 2: Name=Rahul, College=MIT Pune  
+  Record 3: Name=Fatima, College=IIT Bombay
+Encoded:
+  Record 1: Name=CAND_1, College=CL_1
+  Record 2: Name=CAND_2, College=CL_2
+  Record 3: Name=CAND_3, College=CL_3
+                                    ↑
+              IIT Bombay got CL_1 AND CL_3 — different codes!
+              Model cannot learn "CL_1 = prestigious"
+Fix 2: Proxy Removal
+
+Features flagged in Mode 1 with correlation > 0.7
+→ Removed from the dataset entirely
+→ "hobbies" column dropped (was 0.87 correlated with gender)
+Fix 3: Field Removal
+
+Protected attributes removed entirely:
+→ Gender: REMOVED
+→ Age: converted to band (20s/30s/40s)
+→ Photo: REMOVED
+→ Address: REMOVED (zip code = income proxy)
+Before/After Proof (The Money Slide)
+┌─────────────────────────────────────────────────────┐
+│                                                      │
+│   BEFORE FIXES              AFTER FIXES             │
+│                                                      │
+│   Fairness: 42/100 🔴      Fairness: 91/100 🟢    │
+│   Accuracy: 78/100         Accuracy: 74/100         │
+│                                                      │
+│   Gender Gap: 29pts 🔴     Gender Gap: 3pts ✅      │
+│   Religion Gap: 22pts 🔴   Religion Gap: 2pts ✅    │
+│   College Gap: 18pts ⚠️    College Gap: 1pt ✅      │
+│                                                      │
+│   ┌─────────────────────────────────────┐           │
+│   │  TRADEOFF VERDICT                   │           │
+│   │                                     │           │
+│   │  Fairness gained: +49 points        │           │
+│   │  Accuracy lost:    -4 points        │           │
+│   │                                     │           │
+│   │  "Massive fairness improvement      │           │
+│   │   with minimal accuracy cost"       │           │
+│   │                                     │           │
+│   │  Recommendation: APPLY FIXES ✅     │           │
+│   └─────────────────────────────────────┘           │
+│                                                      │
+│   [Export PDF Report]  [Download Fixed Dataset]      │
+└─────────────────────────────────────────────────────┘
+Quarantine Gate (Safety Net)
+After Mode 2 or Mode 3, if bias metrics still fail:
+
+┌──────────────────────────────────────────┐
+│  ⚠️ QUARANTINE ACTIVE                    │
+│                                          │
+│  Results held — NOT released to HR       │
+│                                          │
+│  Reason: Gender gap still 12pts after    │
+│  fixes (threshold: <5pts)               │
+│                                          │
+│  Options:                                │
+│  [Apply stronger fixes]                  │
+│  [Override with justification]           │
+│  [Reject batch]                          │
+└──────────────────────────────────────────┘
+Tech Stack (Final)
+Component	Technology	Role
+Frontend	React 19 + Vite	Dashboard, charts, upload UI
+Backend	Python 3.12 + FastAPI	API, data processing, metrics
+Local AI	Gemma 2 2B via Ollama	Resume scoring (free, offline)
+Data	Pandas + NumPy	CSV parsing, statistical analysis
+Metrics	Scikit-learn + custom	Correlation, fairness calculations
+NER	spaCy (en_core_web_sm)	Free-text PII detection
+Charts	Recharts	Bar charts, heatmaps, comparisons
+Reports	html2pdf / jsPDF	Export compliance PDF
+Storage	In-memory (hackathon)	No database needed for MVP
+Everything Runs Locally
+Your laptop:
+├── React dev server          → localhost:5173
+├── FastAPI backend           → localhost:8000
+├── Ollama + Gemma 2 2B      → localhost:11434
+└── Zero internet dependency. Zero API costs. Zero rate limits.
+API Contracts
+POST /api/upload
+json
+// Request: multipart/form-data with CSV file
+// Response:
+{
+  "dataset_id": "d_001",
+  "rows": 500,
+  "columns": ["name","gender","age","college","city","skills","experience","hired"],
+  "detected_protected": ["name","gender","age"],
+  "detected_features": ["college","city","skills","experience"],
+  "detected_outcome": "hired"
+}
+POST /api/inspect
+json
+// Request:
+{ "dataset_id": "d_001" }
+// Response:
+{
+  "fairness_score": 42,
+  "representation": {
+    "gender": {"Male": 0.78, "Female": 0.22},
+    "verdict": "IMBALANCED"
+  },
+  "label_bias": {
+    "Male_hired_rate": 0.67,
+    "Female_hired_rate": 0.38,
+    "gap": 0.29,
+    "severity": "CRITICAL"
+  },
+  "proxies": [
+    {"feature": "hobbies", "proxy_for": "gender", "correlation": 0.87, "action": "REMOVE"},
+    {"feature": "college", "proxy_for": "hired", "correlation": 0.72, "action": "WARN"}
+  ],
+  "pii_leaks": [
+    {"field": "summary", "entity_type": "PERSON", "count": 47}
+  ],
+  "metrics": {
+    "demographic_parity_ratio": 0.57,
+    "disparate_impact": 0.57,
+    "equal_opportunity_diff": 0.24,
+    "predictive_parity_diff": 0.18,
+    "proxy_leak_score": 0.87,
+    "representation_index": 0.28
+  }
+}
+POST /api/audit
+json
+// Request:
+{
+  "dataset_id": "d_001",
+  "model": "builtin",           // or "external"
+  "external_url": null,          // or "https://company.com/api/score"
+  "num_base_profiles": 50,
+  "name_variants": ["Rahul Sharma","Priya Patel","Mohammed Khan","Fatima Begum","John Smith"]
+}
+// Response:
+{
+  "total_tests": 250,
+  "bias_detected": true,
+  "gaps": [
+    {"attribute": "gender", "gap": 15.2, "favored": "male", "severity": "HIGH", "p_value": 0.0003},
+    {"attribute": "religion", "gap": 22.1, "favored": "hindu_name", "severity": "CRITICAL", "p_value": 0.0001}
+  ],
+  "per_variant_avg": {
+    "Rahul Sharma": 84.3,
+    "Priya Patel": 71.8,
+    "Mohammed Khan": 65.1,
+    "Fatima Begum": 68.4,
+    "John Smith": 82.7
+  }
+}
+POST /api/fix
+json
+// Request:
+{
+  "dataset_id": "d_001",
+  "fixes": {
+    "sequential_encoding": true,
+    "proxy_removal": true,
+    "field_removal": ["gender", "age", "photo"]
+  }
+}
+// Response:
+{
+  "fixed_dataset_id": "d_001_fixed",
+  "before": {"fairness_score": 42, "accuracy": 78},
+  "after": {"fairness_score": 91, "accuracy": 74},
+  "changes_applied": [
+    "Encoded 500 name values → CAND_1 to CAND_500",
+    "Encoded 500 college values → CL_1 to CL_500 (87 unique colleges, 500 unique codes)",
+    "Removed column: hobbies (proxy for gender, r=0.87)",
+    "Removed column: gender",
+    "Converted age → age_band"
+  ]
+}
+Build Plan (4 Days)
+Day 1: Backend Core
+#	Task	Time
+1	FastAPI project setup + CSV upload endpoint	1hr
+2	Schema auto-detection (protected/feature/outcome columns)	1hr
+3	Representation analyzer	1hr
+4	Label bias detector (group-wise outcome rates)	1hr
+5	Proxy scanner (correlation matrix)	1hr
+6	Fairness metrics engine (6 metrics)	2hr
+7	Generate synthetic demo dataset (500 rows with realistic bias)	1hr
+Day 2: Differential Tester + Gemma
+#	Task	Time
+8	Install Ollama + Gemma 2 2B	30min
+9	Build resume scoring prompt for Gemma	1hr
+10	Synthetic variant generator (same resume, N names)	1hr
+11	Differential test runner (batch scoring + gap calculation)	2hr
+12	Statistical significance calculator (p-values)	1hr
+13	Sequential encoder module	1hr
+14	Before/after comparison logic	1hr
+Day 3: Frontend
+#	Task	Time
+15	React + Vite setup, dark theme, routing	2hr
+16	Upload page (drag-drop CSV + "Try Demo Data" button)	1hr
+17	Inspection dashboard (metric cards, charts, proxy heatmap)	3hr
+18	Audit results page (differential test bar chart)	2hr
+19	Fix & Compare page (before/after split view)	2hr
+Day 4: Polish
+#	Task	Time
+20	Animations, transitions, loading states	2hr
+21	PDF report export	2hr
+22	Error handling, edge cases	1hr
+23	Demo rehearsal + bug fixes	2hr
+Demo Script (3 Minutes)
+0:00 — "AI hiring systems discriminate. We prove it and fix it."
+
+0:15 — Upload demo dataset (500 resumes). Show data preview.
+
+0:30 — Click INSPECT. Dashboard reveals: 78% male data, females hired at half the rate, "hobbies" column secretly leaks gender. Fairness Score: 42/100.
+
+1:00 — Click AUDIT. The jaw-dropper: same resume, 5 names. Rahul: 87. Priya: 72. Mohammed: 65. All identical except the name. Bias proven in the AI model itself.
+
+1:45 — Click FIX. Sequential encoding runs live — watch "Priya Sharma" become "CAND_1", "IIT Bombay" become "CL_1". Proxies removed. Model re-runs.
+
+2:15 — Before/After: Fairness 42 → 91. All name variants now score within 3 points. Gender gap: gone. Religion gap: gone.
+
+2:45 — Export PDF compliance report. One click.
+
+3:00 — "This works on any AI system. No source code needed. Upload data, find bias, fix it, prove it."
+
+

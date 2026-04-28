@@ -1,310 +1,355 @@
-# FairHire — Inspect, Measure, Flag, Fix Bias in Hiring Systems
+# IntelliCredit Alternate (ICA)
+> AI-powered alternate credit scoring for individuals and MSMEs with no credit history — built for underserved India.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
-[![React](https://img.shields.io/badge/react-19-blue.svg)](https://react.dev/)
-
-**FairHire** is a clear, accessible solution to thoroughly inspect datasets and software models for hidden unfairness or discrimination. It provides organizations with an easy way to **measure**, **flag**, and **fix** harmful bias before their systems impact real people.
-
-## 🎯 Problem Statement
-
-Computer programs now make life-changing decisions about who gets a job, a bank loan, or even medical care. However, if these programs learn from flawed or unfair historical data, they will repeat and amplify those exact same discriminatory mistakes.
-
-FairHire addresses this by providing:
-- ✅ **Dataset Inspection** — Find bias in your hiring data
-- ✅ **Model Auditing** — Prove your model is biased (without accessing proprietary code)
-- ✅ **Bias Fixing** — Remove bias and prove it worked
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/react-18-blue.svg)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/fastapi-0.109-green.svg)](https://fastapi.tiangolo.com/)
 
 ---
 
-## 🏗️ Architecture Overview
+## 📖 Table of Contents
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        FairHire Platform                         │
-│                                                                  │
-│   ┌────────────────────────────────────────────────────────┐    │
-│   │              WEB UI (React + Vite)                      │    │
-│   │   Upload │ Dashboard │ Audit View │ Fix View │ Report  │    │
-│   └────────────────────────┬───────────────────────────────┘    │
-│                            │ REST API                            │
-│   ┌────────────────────────┴───────────────────────────────┐    │
-│   │              BACKEND (Python + FastAPI)                  │    │
-│   │                                                          │    │
-│   │   ┌──────────┐   ┌──────────┐   ┌──────────┐           │    │
-│   │   │  MODE 1  │   │  MODE 2  │   │  MODE 3  │           │    │
-│   │   │ INSPECT  │   │  AUDIT   │   │   FIX    │           │    │
-│   │   │ Dataset  │   │  Model   │   │ & Prove  │           │    │
-│   │   └────┬─────┘   └────┬─────┘   └────┬─────┘           │    │
-│   │        │              │              │                   │    │
-│   │   ┌────┴──────────────┴──────────────┴─────┐            │    │
-│   │   │         SHARED ENGINES                  │            │    │
-│   │   │  ┌─────────────┐  ┌──────────────┐     │            │    │
-│   │   │  │  Fairness   │  │  Sequential  │     │            │    │
-│   │   │  │  Metrics    │  │  Encoder     │     │            │    │
-│   │   │  └─────────────┘  └──────────────┘     │            │    │
-│   │   │  ┌─────────────┐  ┌──────────────┐     │            │    │
-│   │   │  │  Proxy      │  │  NER Text    │     │            │    │
-│   │   │  │  Detector   │  │  Scrubber    │     │            │    │
-│   │   │  └─────────────┘  └──────────────┘     │            │    │
-│   │   └────────────────────────────────────────┘            │    │
-│   │                                                          │    │
-│   │   ┌────────────────────────────────────────┐            │    │
-│   │   │  LOCAL AI: Gemma 2 2B via Ollama       │            │    │
-│   │   │  localhost:11434 (free, offline, fast)  │            │    │
-│   │   └────────────────────────────────────────┘            │    │
-│   └──────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────────┘
-```
+- [The Problem](#the-problem)
+- [What We Built](#what-we-built)
+- [How It Works](#how-it-works)
+- [Architecture Overview](#architecture-overview)
+- [Dataset](#dataset)
+- [Tech Stack](#tech-stack)
+- [PS1 Compliance Checklist](#ps1-compliance-checklist)
+- [Getting Started](#getting-started)
+- [Dashboard Demo](#dashboard-demo)
+- [Team](#team)
 
 ---
 
-## 🚀 Three Core Modes
+## The Problem
 
-### Mode 1: INSPECT — "Find the Bias in Your Data"
+Over **500 million Indians** and countless MSMEs are locked out of formal credit — not because they're financially irresponsible, but because they've never borrowed before. Banks require credit history to give loans, but you need a loan to build credit history. ICA breaks this cycle.
 
-**What it answers:** *"Is our hiring data fair, or has history baked discrimination into it?"*
+### Key Statistics
 
-#### Input
-Upload a CSV with hiring data. Example columns:
-```csv
-name, gender, age, college, city, skills, experience_years, hired
-```
-
-#### Processing Pipeline
-1. **Schema Detection** — Auto-detect protected attributes, features, and outcomes
-2. **Representation Analysis** — Count distribution per group (flag if any group < 20%)
-3. **Label Bias Detection** — Calculate hiring rate per group with statistical significance
-4. **Proxy Feature Scanner** — Detect correlations between features and protected attributes
-5. **Free-Text PII Scan** — spaCy NER scans for leaked names, locations, organizations
-6. **Fairness Scorecard** — Six metrics calculated with pass/fail verdicts
-
-#### Output
-- Visual dashboard with 6 metric cards (Red/Yellow/Green)
-- Specific evidence for each flag
-- Downloadable inspection report
+| Metric | Value |
+|--------|-------|
+| Credit-invisible adults in India | 190M+ |
+| Potential lending market | ₹3.5L Cr |
+| Loan rejections among first-time borrowers | 90% |
+| Time IntelliCredit takes to score | 30 seconds |
 
 ---
 
-### Mode 2: AUDIT — "Prove Your Model Is Biased" ⭐ **HERO FEATURE**
+## What We Built
 
-**What it answers:** *"Even if the data looks okay, is the MODEL making unfair decisions?"*
+A consent-gated alternate credit scoring system that evaluates loan eligibility using **six everyday data signals** instead of traditional credit history. The system produces:
 
-#### Two Sub-Modes
-- **2A: Built-in Scorer (Gemma 2 local)** — We provide a resume scorer powered by Gemma 2
-- **2B: External Model (Plug any API)** — User provides their company's model endpoint
+- ✅ An explainable **0–850 score** with per-feature reasoning
+- ✅ A **RAG-based loan advisor** grounded in RBI guidelines
+- ✅ A **fairness audit** ensuring no demographic bias
+- ✅ All in **under 60 seconds**
 
-#### The Differential Testing Engine
-1. Select a base resume profile
-2. Generate synthetic variants (identical except for names representing different demographics)
-3. Send all variants to the model
-4. Collect scores and calculate gaps
-5. Repeat with 50+ base profiles for statistical significance
+### Score Bands
 
-#### Why This Beats Existing Tools
-
-| Tool | Requirement | Problem |
-|------|-------------|---------|
-| IBM AIF360 | Model weights + training data | Companies won't share proprietary info |
-| Microsoft Fairlearn | Import model into Python notebook | HR managers don't know Python |
-| Google What-If | Manual feature changes | Slow, not automated, not statistical |
-| **FairHire** | Just an API endpoint | ✅ Works on ANY system — even human recruiters |
-
----
-
-### Mode 3: FIX — "Remove the Bias and Prove It Worked"
-
-**What it answers:** *"Okay, bias exists. Now fix it and show me proof."*
-
-#### Three Fix Strategies
-
-1. **Sequential Encoding (Our Innovation)**
-   - Every sensitive value → unique sequential code
-   - Same value appearing twice → different codes
-   - Prevents model from learning patterns like "IIT Bombay = prestigious"
-
-2. **Proxy Removal**
-   - Features flagged with correlation > 0.7 are removed entirely
-   - Example: "hobbies" column dropped (was 0.87 correlated with gender)
-
-3. **Field Removal**
-   - Protected attributes removed or transformed
-   - Gender: REMOVED
-   - Age: converted to band (20s/30s/40s)
-   - Photo, Address: REMOVED (zip code = income proxy)
-
-#### Before/After Proof
 ```
-BEFORE FIXES              AFTER FIXES
-
-Fairness: 42/100 🔴      Fairness: 91/100 🟢
-Accuracy: 78/100         Accuracy: 74/100
-
-Gender Gap: 29pts 🔴     Gender Gap: 3pts ✅
-Religion Gap: 22pts 🔴   Religion Gap: 2pts ✅
-College Gap: 18pts ⚠️    College Gap: 1pt ✅
-
-TRADEOFF VERDICT
-Fairness gained: +49 points
-Accuracy lost:    -4 points
-
-Recommendation: APPLY FIXES ✅
+750–850  Excellent   →  Best loan terms
+650–749  Good        →  Standard terms
+550–649  Fair        →  Higher interest rate
+450–549  Poor        →  Small loan only
+< 450    Not eligible →  Improvement plan provided
 ```
 
 ---
 
-## 📊 Six Fairness Metrics
+## How It Works
 
-| # | Metric | Formula | Pass Threshold | What It Catches |
-|---|--------|---------|----------------|-----------------|
-| 1 | Demographic Parity Ratio | (worst group rate) ÷ (best group rate) | ≥ 0.8 | Unequal selection rates |
-| 2 | Disparate Impact | Same as DPR — legal name (US 4/5 rule) | ≥ 0.8 | Legal compliance check |
-| 3 | Equal Opportunity Difference | TPR(group A) − TPR(group B) | < 0.1 | Equal chances among qualified |
-| 4 | Predictive Parity | Precision(A) − Precision(B) | < 0.1 | Equal accuracy across groups |
-| 5 | Proxy Leak Score | Max correlation with protected attribute | < 0.6 | Hidden info leakage |
-| 6 | Representation Index | Min group % ÷ Expected group % | ≥ 0.5 | Dataset completeness |
+### 1. Consent Layer (DPDP Act 2023 Compliant)
+The user explicitly consents to each data source individually before anything is accessed. Partial consent is handled gracefully — the system scores with whatever is available, adjusting the score ceiling based on data completeness.
+
+### 2. Six Parallel Data Workers
+
+| Worker | Data Source | Key Signal | Weight |
+|--------|-------------|------------|--------|
+| D1 | UPI & Bank Cash Flow | Income regularity, EMI patterns, balance trend | 25% |
+| D2 | Telecom & Utility Bills | 24-month payment consistency | 20% |
+| D3 | E-Commerce Behavior | Return rate, basket growth, EMI purchase ratio | 15% |
+| D4 | Geolocation Stability | District-level home/work stability | 15% |
+| D5 | Psychometric Questionnaire | Financial responsibility, risk tolerance | 15% |
+| D6 | Merchant & GST Ratings | Business longevity, fulfillment consistency | 10% |
+
+### 3. Two-Tier Feature Architecture
+
+- **Tier 1** — Zero history users: D2 + D4 + D5 only. Simpler model, lower ceiling, still fair.
+- **Tier 2** — Users with some digital footprint: Full D1–D6. Blended ensemble model.
+
+### 4. Blended ML Engine
+
+**XGBoost** and **LightGBM** run independently and their predictions are blended for higher accuracy. **Isotonic calibration** converts the raw output into a true probability — so a 70% default risk score actually reflects a 70% historical default rate.
+
+### 5. Three-Layer Fairness Enforcement
+
+| Layer | Method | Purpose |
+|-------|--------|---------|
+| Pre-processing | Remove gender, religion, caste | Prevent biased inputs |
+| In-processing | Reweight training samples | Balance demographic representation |
+| Post-processing | Disparate Impact Ratio audit | Ensure 80% approval rate parity (four-fifths rule) |
+
+> ⚠️ **Geolocation** is capped at 5% feature weight and restricted to district-level precision to mitigate proxy discrimination risk.
+
+### 6. SHAP Explainability
+
+Every score comes with a plain-language breakdown:
+
+```
+Your Score: 720 — GOOD ✅
+✅ Phone bill payments — 23/24 on time   +89 pts
+✅ UPI inflow — steady 12-month growth   +67 pts
+✅ Questionnaire — strong responsibility +45 pts
+⚠️ E-commerce return rate — above avg   -23 pts
+```
+
+Required by **RBI Fair Practices Code**. If rejected, the user sees exactly what to improve and by how much.
+
+### 7. RAG-Based Loan Advisor
+
+Post-score, users can ask natural language questions. The advisor answers strictly from a knowledge base of **RBI guidelines** and lending precedents — no hallucinations, fully grounded responses.
+
+**Sample questions:**
+- "Why was my return rate flagged?"
+- "How do I improve my score in 6 months?"
+- "What loan terms am I eligible for?"
 
 ---
 
-## 🛡️ Quarantine Gate (Safety Net)
+## Handling Data Inconsistency
 
-If bias metrics still fail after fixes:
+When workers return conflicting signals — for example, D1 shows stable income but D3 shows high-frequency distress purchases — the **Consolidator layer** flags the contradiction explicitly rather than averaging it away. 
 
-```
-┌──────────────────────────────────────────┐
-│  ⚠️ QUARANTINE ACTIVE                    │
-│                                          │
-│  Results held — NOT released to HR       │
-│                                          │
-│  Reason: Gender gap still 12pts          │
-│  (threshold: <5pts)                      │
-│                                          │
-│  Options:                                │
-│  [Apply stronger fixes]                  │
-│  [Override with justification]           │
-│  [Reject batch]                          │
-└──────────────────────────────────────────┘
-```
+Each data point carries its source and confidence score. Conflicts are logged, documented, and surfaced to the scoring engine as a separate feature (**internal consistency score**), which itself feeds into the Character component of the final score.
 
 ---
 
-## 🛠️ Tech Stack
+## Architecture Overview
 
-| Component | Technology | Role |
-|-----------|------------|------|
-| Frontend | React 19 + Vite | Dashboard, charts, upload UI |
-| Backend | Python 3.12 + FastAPI | API, data processing, metrics |
-| Local AI | Gemma 2 2B via Ollama | Resume scoring (free, offline) |
-| Data | Pandas + NumPy | CSV parsing, statistical analysis |
-| Metrics | Scikit-learn + custom | Correlation, fairness calculations |
-| NER | spaCy (en_core_web_sm) | Free-text PII detection |
-| Charts | Recharts | Bar charts, heatmaps, comparisons |
-| Reports | html2pdf / jsPDF | Export compliance PDF |
-| Storage | In-memory (hackathon) | No database needed for MVP |
-
-### Everything Runs Locally
-
+```mermaid
+graph TD
+    A[User Consent<br/>DPDP Compliant] --> B[6 Parallel Data Workers<br/>Celery + Redis]
+    B --> C[Consolidator<br/>Merge + Conflict Detection]
+    C --> D[Validator Gate<br/>Completeness Check]
+    D --> E[Two-Tier Feature Builder]
+    E --> F[3-Layer Fairness Enforcement]
+    F --> G[XGBoost + LightGBM Blend]
+    G --> H[Isotonic Calibration]
+    H --> I[SHAP Explanation Generator]
+    I --> J[0-850 Score + RAG Advisor]
+    J --> K[React Dashboard<br/>Vercel]
+    J --> L[FastAPI Backend<br/>Render]
+    
+    M[PostgreSQL<br/>Audit Trail] -.-> C
+    N[ChromaDB<br/>RAG Knowledge] -.-> J
+    O[Redis<br/>Worker Coordination] -.-> B
 ```
-Your laptop:
-├── React dev server          → localhost:5173
-├── FastAPI backend           → localhost:8000
-├── Ollama + Gemma 2 2B      → localhost:11434
-└── Zero internet dependency. Zero API costs. Zero rate limits.
-```
+
+### Data Flow
+
+1. **User Consent** → DPDP-compliant per-source opt-in
+2. **6 Parallel Workers** → Celery tasks fire simultaneously (30 sec total)
+3. **Consolidator** → Merges results, detects conflicts
+4. **Validator Gate** → Routes to Tier 1 or Tier 2 based on data completeness
+5. **Fairness Filter** → Pre/post-processing bias checks
+6. **ML Engine** → XGBoost + LightGBM blend with isotonic calibration
+7. **SHAP Generator** → Creates explainable breakdown
+8. **Score + RAG** → Final output with advisor
+
+### Databases
+
+| Database | Purpose |
+|----------|---------|
+| **PostgreSQL** | All decisions with full audit trail (users, scores, shap_values, feedback) |
+| **ChromaDB** | RAG knowledge base (rbi_guidelines, lending_precedents, questionnaire_embeddings) |
+| **Redis** | Worker coordination, caching, pub/sub for parallel processing |
 
 ---
 
-## 📡 API Contracts
+## Why This Architecture
 
-### POST /api/upload
-```json
-// Request: multipart/form-data with CSV file
-// Response:
-{
-  "dataset_id": "d_001",
-  "rows": 500,
-  "columns": ["name","gender","age","college","city","skills","experience","hired"],
-  "detected_protected": ["name","gender","age"],
-  "detected_features": ["college","city","skills","experience"],
-  "detected_outcome": "hired"
-}
+**Most alternate credit systems pick one or two data signals.** ICA uses **six simultaneously**, cross-validates them against each other, and treats contradictions as signal rather than noise.
+
+- **XGBoost** handles structured financial ratios better
+- **LightGBM** handles sparse behavioral features better
+- **Together** they cover the full alternate data feature space
+
+The **consent-first design** isn't just legal compliance — it's a trust mechanism. A first-generation borrower who understands exactly what data is being used and why is more likely to complete the application and engage honestly with the questionnaire.
+
+The **SHAP layer** transforms the system from a black box into an auditable, RBI-compliant decision record that a credit officer, a regulator, or the borrower themselves can read and challenge.
+
+---
+
+## Dataset
+
+This prototype uses **synthetically generated data** modelled on Indian alternate data patterns:
+- UPI inflow distributions
+- Telecom payment consistency rates
+- Psychometric response profiles calibrated to Indian microfinance research
+
+**Production deployment** requires real Account Aggregator sourced data with RBI Financial Information User registration.
+
+### Simulated Data Stats
+
+| Metric | Value |
+|--------|-------|
+| Total Applicants Processed | 10,000+ |
+| Excellent (750-850) | 18% (1,800) |
+| Good (650-749) | 27% (2,700) |
+| Fair (550-649) | 30% (3,000) |
+| Poor (450-549) | 15% (1,500) |
+| Not Eligible (<450) | 10% (1,000) |
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | React 18, Tailwind CSS | Dashboard UI deployed on Vercel |
+| **Backend** | FastAPI, Python 3.12 | REST API deployed on Render |
+| **ML Engine** | XGBoost, LightGBM, SHAP, scikit-learn | Two-tier scoring with explainability |
+| **Queue** | Celery + Redis | Parallel worker coordination |
+| **Databases** | PostgreSQL, ChromaDB | Audit trail + RAG knowledge base |
+| **Explainability** | SHAP global summary + local force plots | Per-feature score breakdown |
+| **Fairness** | Disparate Impact Ratio audit | Four-fifths rule enforcement |
+
+---
+
+## PS1 Compliance Checklist
+
+| Requirement | Implementation | Status |
+|-------------|----------------|--------|
+| Phone bill payment consistency | D2 Worker | ✅ |
+| E-commerce purchase behavior | D3 Worker | ✅ |
+| Geolocation stability | D4 Worker (district-level only) | ✅ |
+| Questionnaire-based risk | D5 Psychometric Worker | ✅ |
+| Merchant ratings | D6 Worker | ✅ |
+| Bank account cash flow | D1 UPI/Bank Worker | ✅ |
+| Psychometric & behavioral risk models | Isotonic-calibrated XGBoost + LightGBM | ✅ |
+| Consent-based data flow | DPDP-compliant per-source consent | ✅ |
+| Privacy & encryption compliance | No PII stored, derived scores only | ✅ |
+| Responsible lending practices | Hard blocks, DIR audit, SHAP explanations | ✅ |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- Redis server
+- PostgreSQL database
+
+### Backend Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/intellicredit.git
+cd intellicredit/backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run migrations
+alembic upgrade head
+
+# Start Celery workers
+celery -A app.celery worker --loglevel=info
+
+# Start FastAPI server
+uvicorn app.main:app --reload
 ```
 
-### POST /api/inspect
-```json
-// Request:
-{ "dataset_id": "d_001" }
-// Response:
-{
-  "fairness_score": 42,
-  "representation": {
-    "gender": {"Male": 0.78, "Female": 0.22},
-    "verdict": "IMBALANCED"
-  },
-  "label_bias": {
-    "Male_hired_rate": 0.67,
-    "Female_hired_rate": 0.38,
-    "gap": 0.29,
-    "severity": "CRITICAL"
-  },
-  "proxies": [
-    {"feature": "hobbies", "proxy_for": "gender", "correlation": 0.87, "action": "REMOVE"},
-    {"feature": "college", "proxy_for": "hired", "correlation": 0.72, "action": "WARN"}
-  ],
-  "metrics": {
-    "demographic_parity_ratio": 0.57,
-    "disparate_impact": 0.57,
-    "equal_opportunity_diff": 0.24,
-    "predictive_parity_diff": 0.18,
-    "proxy_leak_score": 0.87,
-    "representation_index": 0.28
-  }
-}
+### Frontend Setup
+
+```bash
+cd ../frontend
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+
+# Start development server
+npm run dev
 ```
 
-### POST /api/audit
-```json
-// Request:
-{
-  "dataset_id": "d_001",
-  "model": "builtin",
-  "external_url": null,
-  "num_base_profiles": 50,
-  "name_variants": ["Rahul Sharma","Priya Patel","Mohammed Khan","Fatima Begum","John Smith"]
-}
-// Response:
-{
-  "total_tests": 250,
-  "bias_detected": true,
-  "gaps": [
-    {"attribute": "gender", "gap": 15.2, "favored": "male", "severity": "HIGH", "p_value": 0.0003},
-    {"attribute": "religion", "gap": 22.1, "favored": "hindu_name", "severity": "CRITICAL", "p_value": 0.0001}
-  ]
-}
-```
+### Running the Dashboard
+
+The dashboard is built using custom components from our dashboard template:
+
+- **StatCard** — Display key metrics (190M+ credit-invisible, etc.)
+- **ProgressBarCard** — Show score distribution
+- **DonutChartCard** — Visualize applicant breakdown by score band
+- **SecurityTable** — Display applicant list with SHAP breakdowns
+- **Header/Sidebar** — Navigation structure
+- **ApplicationCard** — Individual applicant details
+
+Access the dashboard at `http://localhost:3000`
 
 ---
 
-## 🎯 Key Differentiators
+## Dashboard Demo
 
-- **No-Code Web UI** — Upload CSV, click buttons, read visual dashboard. No Python needed
-- **Black-Box Testing** — Audit any model without accessing source code or weights
-- **Before/After Proof** — Quantifiable evidence that fixes work
-- **Quarantine System** — Biased results are HELD until human review
-- **100% Local** — No cloud dependencies, no API costs, complete privacy
+### Loan Officer Dashboard View
+
+- Real-time score submissions and approval rates
+- Geographic distribution of applicants
+- Filter by score band, region, date range
+
+### Score Management View
+
+- Individual SHAP breakdown per applicant
+- Flagged contradictions and edge cases
+- RAG Advisor integration for Q&A
+
+### Live Links
+
+- 🌐 **Deployed Dashboard**: [Insert Vercel Link]
+- 💻 **GitHub Repository**: [Insert GitHub Link]
+- 📹 **Demo Video**: [Insert Video Link]
 
 ---
 
-## 📄 License
+## Future Scope
 
-MIT License — See [LICENSE](LICENSE) for details.
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | Federated Learning | Train ML model across banks without sharing raw data |
+| 2 | Account Aggregator Integration | Real-time bank feeds via RBI's AA framework |
+| 3 | Loan Marketplace API | Connect approved users to NBFC/bank partners |
+| 4 | Continuous Score Updates | Monthly re-scoring as new data arrives |
+| 5 | Voice-Based Questionnaire | Replace text form with voice input for rural users |
+| 6 | Multilingual RAG Advisor | Answer questions in Hindi, Tamil, Marathi + 10 languages |
 
 ---
 
-## 🤝 Contributing
+## Team
 
-We welcome contributions! Please read our contributing guidelines before submitting PRs.
+**Team IntelliCredit**
+
+Built for underserved India — because your financial story goes beyond your credit history.
 
 ---
 
-**Built with ❤️ to make AI fair for everyone.**
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+> "IntelliCredit doesn't just open doors for the unbanked — it tells them exactly how to walk through."
